@@ -1,0 +1,63 @@
+# Harbor Core Settings
+externalURL: https://harbor.yourdomain.com  # MUST match TLS cert
+harborAdminPassword: "!SecureAdminPassword123"  # Change this!
+
+# Enable only necessary components
+chartmuseum:
+  enabled: false  # Disable if not using Helm charts
+trivy:
+  enabled: true   # Enable vulnerability scanning
+notary:
+  enabled: false  # Disable if not using image signing
+
+# Exposure Configuration (Ingress with TLS)
+expose:
+  type: ingress
+  tls:
+    enabled: true
+    certSource: secret  # Pre-created TLS secret
+    secret:
+      secretName: "harbor-tls"  # kubectl create secret tls harbor-tls --cert=... --key=...
+  ingress:
+    className: "nginx"  # or "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"  # If using cert-manager
+
+# Database (external PostgreSQL recommended)
+database:
+  internal:
+    password: "!PostgresPassword123"
+    resources:
+      requests:
+        storage: 10Gi  # Minimum for production
+
+# Redis (external recommended)
+redis:
+  password: "!RedisPassword123"
+
+# Registry Storage (S3/MinIO recommended for production)
+persistence:
+  enabled: true
+  registry:
+    storageClass: "gp2"  # AWS EBS, or "standard" for GKE
+    size: 50Gi  # Adjust based on usage
+  chartmuseum:
+    enabled: false
+  trivy:
+    storageClass: "gp2"
+    size: 5Gi
+
+# Resource Limits (adjust based on cluster size)
+resources:
+  core:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+  registry:
+    requests:
+      cpu: "1Gi"
+      memory: "2Gi"
+
+# Job Service (async tasks like replication)
+jobservice:
+  maxReplicas: 3  # For high availability
